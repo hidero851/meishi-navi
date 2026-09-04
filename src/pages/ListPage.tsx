@@ -1,8 +1,27 @@
 import { useEffect, useState, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Search, Plus, ChevronDown, ChevronUp, ArrowUpDown } from 'lucide-react'
+import { Search, Plus, ChevronDown, ChevronUp, ArrowUpDown, Download } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import type { Card } from '../types'
+
+function exportCSV(cards: Card[]) {
+  const headers = ['氏名', 'よみがな', '会社名', '部署', '役職', 'TEL', '携帯', 'メール', '住所', 'Web', 'メモ', '重要度', '登録日']
+  const rows = cards.map(c => [
+    c.name, c.kana, c.company, c.dept, c.title,
+    c.phone, c.mobile, c.email, c.addr, c.web, c.notes,
+    c.importance,
+    c.created_at ? new Date(c.created_at).toLocaleDateString('ja-JP') : '',
+  ].map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(','))
+
+  const csv = '﻿' + [headers.join(','), ...rows].join('\r\n')
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `名刺データ_${new Date().toLocaleDateString('ja-JP').replace(/\//g, '-')}.csv`
+  a.click()
+  URL.revokeObjectURL(url)
+}
 
 type SortKey = 'company' | 'name'
 type SortDir = 'asc' | 'desc'
@@ -147,19 +166,37 @@ export default function ListPage() {
           </div>
           <span style={{ fontSize: 18, fontWeight: 700, letterSpacing: '-.3px' }}>名刺ボックス</span>
         </div>
-        <button
-          onClick={() => navigate('/card/new')}
-          style={{
-            width: 42, height: 42, borderRadius: '50%',
-            background: 'var(--accent)', color: '#fff',
-            border: 'none', fontSize: 24,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            cursor: 'pointer', boxShadow: 'var(--sh2)',
-          }}
-          aria-label="名刺を追加"
-        >
-          <Plus size={20} />
-        </button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button
+            onClick={() => exportCSV(cards)}
+            disabled={cards.length === 0}
+            title="CSVでエクスポート"
+            style={{
+              width: 42, height: 42, borderRadius: '50%',
+              background: 'var(--surface)', color: 'var(--text2)',
+              border: '1px solid var(--border)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              cursor: cards.length > 0 ? 'pointer' : 'not-allowed',
+              opacity: cards.length > 0 ? 1 : .4,
+            }}
+            aria-label="CSVエクスポート"
+          >
+            <Download size={18} />
+          </button>
+          <button
+            onClick={() => navigate('/card/new')}
+            style={{
+              width: 42, height: 42, borderRadius: '50%',
+              background: 'var(--accent)', color: '#fff',
+              border: 'none',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              cursor: 'pointer', boxShadow: 'var(--sh2)',
+            }}
+            aria-label="名刺を追加"
+          >
+            <Plus size={20} />
+          </button>
+        </div>
       </header>
 
       {/* Search */}
