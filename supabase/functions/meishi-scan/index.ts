@@ -5,21 +5,24 @@ const cors = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-const PROMPT = `この名刺の情報をすべて読み取り、以下のJSON形式のみで返してください。余分な説明・マークダウン不要。
+const PROMPT = `You are an expert OCR assistant specializing in Japanese business cards (名刺).
+Carefully examine every part of this business card image and extract all text.
 
-注意事項：
-- name: 人名（漢字・カタカナ・ローマ字いずれも可）
-- kana: 氏名のよみがな。ひらがな・カタカナ・ローマ字いずれも可。名刺に記載がなければ空文字列
-- company: 会社名・組織名。「株式会社」が別行にあっても社名と結合して返す（例: "株式会社○○"）
-- dept: 部署名。なければ空文字列
-- title: 役職名。なければ空文字列
-- phone: 固定電話番号。なければ空文字列
-- mobile: 携帯・スマホの番号。なければ空文字列
-- email: メールアドレス。なければ空文字列
-- addr: 住所。なければ空文字列
-- web: WebサイトURL。なければ空文字列
+Return ONLY a JSON object with these exact keys. No markdown, no explanation.
 
-読み取れない項目は空文字列にすること。
+Rules:
+- name: The person's full name. May be in kanji, katakana, hiragana, or romaji. Look for the largest or most prominent name on the card.
+- kana: Furigana/reading of the name. Accept hiragana, katakana, or romaji. Empty string if not present.
+- company: Organization name. If "株式会社" or "有限会社" etc. appears on a separate line from the rest of the name, combine them (e.g. "株式会社〇〇"). Include the full legal name.
+- dept: Department/division name. Empty string if not present.
+- title: Job title / position. Empty string if not present.
+- phone: Office/landline phone number. Empty string if not present.
+- mobile: Mobile/cell phone number. Empty string if not present.
+- email: Email address. Empty string if not present.
+- addr: Full postal address. Empty string if not present.
+- web: Website URL. Empty string if not present.
+
+If a field is unclear or absent, use empty string "". Never omit a key.
 
 {"name":"","kana":"","company":"","dept":"","title":"","phone":"","mobile":"","email":"","addr":"","web":""}`
 
@@ -41,7 +44,7 @@ serve(async (req) => {
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
+        model: 'claude-sonnet-4-6',
         max_tokens: 1024,
         messages: [{
           role: 'user',

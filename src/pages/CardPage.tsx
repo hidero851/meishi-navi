@@ -30,7 +30,7 @@ function compress(file: File): Promise<{ dataUrl: string; blob: Blob }> {
       const img = new Image()
       img.onerror = rej
       img.onload = () => {
-        const MAX = 1200
+        const MAX = 1600
         let w = img.width, h = img.height
         if (w > MAX || h > MAX) {
           if (w > h) { h = Math.round(h * MAX / w); w = MAX }
@@ -41,8 +41,8 @@ function compress(file: File): Promise<{ dataUrl: string; blob: Blob }> {
         c.getContext('2d')!.drawImage(img, 0, 0, w, h)
         c.toBlob(blob => {
           if (!blob) { rej(new Error('compress failed')); return }
-          res({ dataUrl: c.toDataURL('image/jpeg', 0.82), blob })
-        }, 'image/jpeg', 0.82)
+          res({ dataUrl: c.toDataURL('image/jpeg', 0.92), blob })
+        }, 'image/jpeg', 0.92)
       }
       img.src = e.target!.result as string
     }
