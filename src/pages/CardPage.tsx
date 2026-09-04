@@ -89,6 +89,7 @@ export default function CardPage({ mode }: { mode: 'new' | 'view' | 'edit' }) {
 
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [showCamera, setShowCamera] = useState(false)
+  const [lightbox, setLightbox] = useState<string | null>(null)
   const isEditing = mode === 'new' || mode === 'edit'
 
   // Load existing card
@@ -283,12 +284,16 @@ export default function CardPage({ mode }: { mode: 'new' | 'view' | 'edit' }) {
 
           {/* Photo slot */}
           <div
-            onClick={() => { if (isEditing && !currentPreview) fileInputRef.current?.click() }}
+            onClick={() => {
+              if (isEditing && !currentPreview) fileInputRef.current?.click()
+              else if (!isEditing && currentPreview) setLightbox(currentPreview)
+            }}
             style={{
               position: 'relative', aspectRatio: '1.75',
               border: currentPreview ? '1px solid var(--border)' : '2px dashed var(--border)',
               borderRadius: 12, overflow: 'hidden',
-              background: 'var(--surface)', cursor: isEditing && !currentPreview ? 'pointer' : 'default',
+              background: 'var(--surface)',
+              cursor: (isEditing && !currentPreview) || (!isEditing && currentPreview) ? 'pointer' : 'default',
               transition: 'border-color .15s',
             }}
           >
@@ -435,6 +440,38 @@ export default function CardPage({ mode }: { mode: 'new' | 'view' | 'edit' }) {
       </div>
 
       <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleFileChange} />
+
+      {/* Lightbox */}
+      {lightbox && (
+        <div
+          onClick={() => setLightbox(null)}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 100,
+            background: 'rgba(0,0,0,.92)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            cursor: 'zoom-out',
+          }}
+        >
+          <button
+            onClick={() => setLightbox(null)}
+            style={{
+              position: 'absolute', top: 16, right: 16,
+              width: 40, height: 40, borderRadius: '50%',
+              background: 'rgba(255,255,255,.15)', color: '#fff',
+              border: 'none', cursor: 'pointer', fontSize: 20,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}
+          >
+            <X size={20} />
+          </button>
+          <img
+            src={lightbox}
+            alt="名刺"
+            onClick={e => e.stopPropagation()}
+            style={{ maxWidth: '95vw', maxHeight: '90vh', objectFit: 'contain', borderRadius: 8, cursor: 'default' }}
+          />
+        </div>
+      )}
 
       {showCamera && (
         <CameraModal
