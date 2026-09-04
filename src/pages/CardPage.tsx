@@ -87,6 +87,7 @@ export default function CardPage({ mode }: { mode: 'new' | 'view' | 'edit' }) {
   const [backBlob, setBackBlob] = useState<Blob | null>(null)
 
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const cameraInputRef = useRef<HTMLInputElement>(null)
   const isEditing = mode === 'new' || mode === 'edit'
 
   // Load existing card
@@ -313,23 +314,37 @@ export default function CardPage({ mode }: { mode: 'new' | 'view' | 'edit' }) {
 
           {/* Photo actions (edit mode only) */}
           {isEditing && (
-            <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                style={{
-                  flex: 1, padding: 9, border: '1px solid var(--border)', borderRadius: 8,
-                  background: 'var(--surface)', color: 'var(--text)', fontSize: 13, fontWeight: 600,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                  cursor: 'pointer', fontFamily: 'inherit',
-                }}
-              >
-                <Camera size={14} />{currentPreview ? '写真を変更' : '写真を追加'}
-              </button>
+            <>
+              <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+                <button
+                  onClick={() => cameraInputRef.current?.click()}
+                  style={{
+                    flex: 1, padding: 9, border: '1px solid var(--border)', borderRadius: 8,
+                    background: 'var(--surface)', color: 'var(--text)', fontSize: 13, fontWeight: 600,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                    cursor: 'pointer', fontFamily: 'inherit',
+                  }}
+                >
+                  <Camera size={14} />カメラで撮影
+                </button>
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  style={{
+                    flex: 1, padding: 9, border: '1px solid var(--border)', borderRadius: 8,
+                    background: 'var(--surface)', color: 'var(--text)', fontSize: 13, fontWeight: 600,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                    cursor: 'pointer', fontFamily: 'inherit',
+                  }}
+                >
+                  <Camera size={14} />ライブラリ
+                </button>
+              </div>
               <button
                 onClick={handleScan}
                 disabled={!currentPreview || scanning}
                 style={{
-                  flex: 1, padding: 9, background: 'var(--accent)', color: '#fff', border: 'none',
+                  width: '100%', marginTop: 8, padding: 9,
+                  background: 'var(--accent)', color: '#fff', border: 'none',
                   borderRadius: 8, fontSize: 13, fontWeight: 600,
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
                   cursor: currentPreview && !scanning ? 'pointer' : 'not-allowed',
@@ -338,7 +353,7 @@ export default function CardPage({ mode }: { mode: 'new' | 'view' | 'edit' }) {
               >
                 <Zap size={14} />AI読み取り
               </button>
-            </div>
+            </>
           )}
         </div>
 
@@ -419,6 +434,7 @@ export default function CardPage({ mode }: { mode: 'new' | 'view' | 'edit' }) {
       </div>
 
       <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleFileChange} />
+      <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" style={{ display: 'none' }} onChange={handleFileChange} />
 
       {/* Toast */}
       <div className={`toast-base${show ? ' show' : ''}`}>{msg}</div>
