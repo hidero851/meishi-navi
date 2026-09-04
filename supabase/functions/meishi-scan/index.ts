@@ -5,9 +5,23 @@ const cors = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-const PROMPT = `この名刺の情報をすべて読み取り、以下のJSON形式のみで返してください。読み取れない項目は空文字列。余分な説明・マークダウン不要。
+const PROMPT = `この名刺の情報をすべて読み取り、以下のJSON形式のみで返してください。余分な説明・マークダウン不要。
 
-{"name":"氏名","kana":"よみがな","company":"会社名","dept":"部署名","title":"役職","phone":"電話番号","mobile":"携帯番号","email":"メールアドレス","addr":"住所","web":"URL"}`
+注意事項：
+- name: 人名（漢字・カタカナ・ローマ字いずれも可）
+- kana: 氏名のよみがな。ひらがな・カタカナ・ローマ字いずれも可。名刺に記載がなければ空文字列
+- company: 会社名・組織名。「株式会社」が別行にあっても社名と結合して返す（例: "株式会社○○"）
+- dept: 部署名。なければ空文字列
+- title: 役職名。なければ空文字列
+- phone: 固定電話番号。なければ空文字列
+- mobile: 携帯・スマホの番号。なければ空文字列
+- email: メールアドレス。なければ空文字列
+- addr: 住所。なければ空文字列
+- web: WebサイトURL。なければ空文字列
+
+読み取れない項目は空文字列にすること。
+
+{"name":"","kana":"","company":"","dept":"","title":"","phone":"","mobile":"","email":"","addr":"","web":""}`
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors })

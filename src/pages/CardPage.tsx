@@ -208,7 +208,7 @@ export default function CardPage({ mode }: { mode: 'new' | 'view' | 'edit' }) {
         borderBottom: '1px solid var(--border)',
       }}>
         <button
-          onClick={() => navigate(id ? `/card/${id}` : '/')}
+          onClick={() => navigate(mode === 'edit' ? `/card/${id}` : '/')}
           style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', color: 'var(--accent)', fontSize: 15, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit' }}
         >
           <ChevronLeft size={18} />
@@ -236,7 +236,7 @@ export default function CardPage({ mode }: { mode: 'new' | 'view' | 'edit' }) {
           )}
           {isEditing && (
             <>
-              <button onClick={() => navigate(id ? `/card/${id}` : '/')} style={{
+              <button onClick={() => navigate(mode === 'edit' ? `/card/${id}` : '/')} style={{
                 display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px',
                 background: 'var(--surface)', color: 'var(--text)', border: '1px solid var(--border)',
                 borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
