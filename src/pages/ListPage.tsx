@@ -1,14 +1,17 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Search, Plus } from 'lucide-react'
+import { Search, Plus, ChevronDown, ChevronUp, ArrowUpDown } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import type { Card } from '../types'
+
+type SortKey = 'company' | 'name'
+type SortDir = 'asc' | 'desc'
 
 function Stars({ n }: { n: number }) {
   return (
     <span className="flex gap-0.5">
       {[1, 2, 3, 4, 5].map(i => (
-        <span key={i} style={{ color: i <= n ? 'var(--warn)' : 'var(--border)', fontSize: 13 }}>★</span>
+        <span key={i} style={{ color: i <= n ? 'var(--warn)' : 'var(--border)', fontSize: 12 }}>★</span>
       ))}
     </span>
   )
@@ -17,7 +20,7 @@ function Stars({ n }: { n: number }) {
 function Avatar({ card }: { card: Card }) {
   if (card.front_photo_url) {
     return (
-      <div style={{ width: 40, height: 40, borderRadius: '50%', overflow: 'hidden', flexShrink: 0 }}>
+      <div style={{ width: 36, height: 36, borderRadius: '50%', overflow: 'hidden', flexShrink: 0 }}>
         <img src={card.front_photo_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
       </div>
     )
@@ -25,10 +28,10 @@ function Avatar({ card }: { card: Card }) {
   const initial = (card.name || '?').trim().charAt(0).toUpperCase()
   return (
     <div style={{
-      width: 40, height: 40, borderRadius: '50%',
+      width: 36, height: 36, borderRadius: '50%',
       background: 'var(--accent-soft)', color: 'var(--accent)',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
-      fontWeight: 700, fontSize: 15, flexShrink: 0,
+      fontWeight: 700, fontSize: 14, flexShrink: 0,
     }}>
       {initial}
     </div>
@@ -40,6 +43,9 @@ export default function ListPage() {
   const [cards, setCards] = useState<Card[]>([])
   const [loading, setLoading] = useState(true)
   const [query, setQuery] = useState('')
+  const [sortKey, setSortKey] = useState<SortKey>('company')
+  const [sortDir, setSortDir] = useState<SortDir>('asc')
+  const [expanded, setExpanded] = useState<Set<string>>(new Set())
 
   const fetchCards = useCallback(async () => {
     const { data, error } = await supabase
@@ -47,19 +53,76 @@ export default function ListPage() {
       .select('*')
       .order('importance', { ascending: false })
       .order('created_at', { ascending: false })
-    if (!error && data) setCards(data)
+    if (!error && data) {
+      setCards(data)
+      // 全グループを初期展開
+      const companies = new Set(data.map((c: Card) => c.company?.trim() || '（会社名なし）'))
+      setExpanded(companies)
+    }
     setLoading(false)
   }, [])
 
   useEffect(() => { fetchCards() }, [fetchCards])
 
-  const filtered = query.trim()
-    ? cards.filter(c =>
-        [c.name, c.kana, c.company, c.title, c.notes].some(f =>
-          (f || '').toLowerCase().includes(query.toLowerCase())
-        )
-      )
-    : cards
+  const filtered = useMemo(() => {
+    if (!query.trim()) return cards
+    const q = query.toLowerCase()
+    return cards.filter(c =>
+      [c.name, c.kana, c.company, c.title, c.notes].some(f => (f || '').toLowerCase().includes(q))
+    )
+  }, [cards, query])
+
+  const grouped = useMemo(() => {
+    const map = new Map<string, Card[]>()
+    filtered.forEach(card => {
+      const key = card.company?.trim() || '（会社名なし）'
+      if (!map.has(key)) map.set(key, [])
+      map.get(key)!.push(card)
+    })
+
+    // グループ内ソート
+    map.forEach(members => {
+      members.sort((a, b) => {
+        if (sortKey === 'name') {
+          const an = a.name || '', bn = b.name || ''
+          return sortDir === 'asc' ? an.localeCompare(bn, 'ja') : bn.localeCompare(an, 'ja')
+        }
+        return (b.importance || 3) - (a.importance || 3)
+      })
+    })
+
+    // グループ間ソート
+    const entries = [...map.entries()]
+    entries.sort(([ak, av], [bk, bv]) => {
+      if (sortKey === 'company') {
+        return sortDir === 'asc' ? ak.localeCompare(bk, 'ja') : bk.localeCompare(ak, 'ja')
+      } else {
+        const an = av[0]?.name || '', bn = bv[0]?.name || ''
+        return sortDir === 'asc' ? an.localeCompare(bn, 'ja') : bn.localeCompare(an, 'ja')
+      }
+    })
+
+    return entries
+  }, [filtered, sortKey, sortDir])
+
+  const toggleExpand = (company: string) => {
+    setExpanded(prev => {
+      const next = new Set(prev)
+      if (next.has(company)) next.delete(company)
+      else next.add(company)
+      return next
+    })
+  }
+
+  const toggleSort = (key: SortKey) => {
+    if (sortKey === key) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
+    else { setSortKey(key); setSortDir('asc') }
+  }
+
+  const sortLabel = (key: SortKey) => {
+    if (sortKey !== key) return ''
+    return sortDir === 'asc' ? ' ↑' : ' ↓'
+  }
 
   return (
     <div style={{ maxWidth: 840, margin: '0 auto', padding: '0 16px 80px' }}>
@@ -69,7 +132,7 @@ export default function ListPage() {
         background: 'var(--bg)',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         padding: '14px 0 12px',
-        marginBottom: 20,
+        marginBottom: 12,
         borderBottom: '1px solid var(--border)',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -100,7 +163,7 @@ export default function ListPage() {
       </header>
 
       {/* Search */}
-      <div style={{ position: 'relative', marginBottom: 12 }}>
+      <div style={{ position: 'relative', marginBottom: 10 }}>
         <Search size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text3)', pointerEvents: 'none' }} />
         <input
           type="search"
@@ -116,11 +179,26 @@ export default function ListPage() {
         />
       </div>
 
-      {/* Desktop column headers */}
-      <div className="hidden sm:flex" style={{ padding: '0 56px 6px 56px', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.07em', color: 'var(--text3)', gap: 12 }}>
-        <span style={{ flex: 1 }}>氏名</span>
-        <span style={{ flex: 1 }}>会社・役職</span>
-        <span style={{ width: 64, textAlign: 'right' }}>重要度</span>
+      {/* Sort bar */}
+      <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
+        <div style={{ fontSize: 12, color: 'var(--text3)', display: 'flex', alignItems: 'center', gap: 4, marginRight: 4 }}>
+          <ArrowUpDown size={13} />並び順:
+        </div>
+        {(['company', 'name'] as SortKey[]).map(key => (
+          <button
+            key={key}
+            onClick={() => toggleSort(key)}
+            style={{
+              padding: '5px 12px', borderRadius: 20, fontSize: 12, fontWeight: 600,
+              border: `1px solid ${sortKey === key ? 'var(--accent)' : 'var(--border)'}`,
+              background: sortKey === key ? 'var(--accent)' : 'var(--surface)',
+              color: sortKey === key ? '#fff' : 'var(--text2)',
+              cursor: 'pointer', fontFamily: 'inherit', transition: 'all .15s',
+            }}
+          >
+            {key === 'company' ? '会社名' : '人物名'}{sortLabel(key)}
+          </button>
+        ))}
       </div>
 
       {/* Card list */}
@@ -129,7 +207,7 @@ export default function ListPage() {
           <div className="spinner-dark" style={{ margin: '0 auto 12px' }} />
           <p style={{ color: 'var(--text3)', fontSize: 14 }}>読み込み中…</p>
         </div>
-      ) : filtered.length === 0 ? (
+      ) : grouped.length === 0 ? (
         <div style={{ padding: '72px 24px', textAlign: 'center', color: 'var(--text2)' }}>
           <div style={{ fontSize: 48, marginBottom: 16, opacity: .4 }}>📇</div>
           <h3 style={{ fontSize: 18, fontWeight: 600, color: 'var(--text)', marginBottom: 8 }}>
@@ -148,49 +226,65 @@ export default function ListPage() {
           )}
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          {filtered.map(card => (
-            <div
-              key={card.id}
-              onClick={() => navigate(`/card/${card.id}`)}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 12,
-                padding: '12px 14px',
-                background: 'var(--surface)', border: '1px solid var(--border)',
-                borderRadius: 12, cursor: 'pointer',
-                boxShadow: 'var(--sh1)', transition: 'all .15s',
-              }}
-              onMouseEnter={e => {
-                const el = e.currentTarget
-                el.style.borderColor = 'var(--accent)'
-                el.style.boxShadow = 'var(--sh2)'
-                el.style.transform = 'translateY(-1px)'
-              }}
-              onMouseLeave={e => {
-                const el = e.currentTarget
-                el.style.borderColor = 'var(--border)'
-                el.style.boxShadow = 'var(--sh1)'
-                el.style.transform = ''
-              }}
-            >
-              <Avatar card={card} />
-              <div style={{ flex: 1, minWidth: 0 }} className="sm:flex sm:gap-3 sm:items-center">
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 15, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {card.name || '（名前なし）'}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {grouped.map(([company, members]) => {
+            const isOpen = expanded.has(company)
+            return (
+              <div key={company} style={{ border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden', background: 'var(--surface)', boxShadow: 'var(--sh1)' }}>
+                {/* Company header */}
+                <button
+                  onClick={() => toggleExpand(company)}
+                  style={{
+                    width: '100%', padding: '11px 14px',
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    background: 'var(--surface2)', border: 'none', cursor: 'pointer',
+                    fontFamily: 'inherit',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>{company}</span>
+                    <span style={{
+                      fontSize: 11, fontWeight: 700, padding: '2px 7px',
+                      background: 'var(--accent)', color: '#fff', borderRadius: 10,
+                    }}>{members.length}</span>
                   </div>
-                  <div style={{ fontSize: 12, color: 'var(--text2)', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} className="sm:hidden">
-                    {[card.company, card.title].filter(Boolean).join(' · ')}
+                  {isOpen ? <ChevronUp size={16} color="var(--text3)" /> : <ChevronDown size={16} color="var(--text3)" />}
+                </button>
+
+                {/* Members */}
+                {isOpen && (
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    {members.map((card, i) => (
+                      <div
+                        key={card.id}
+                        onClick={() => navigate(`/card/${card.id}`)}
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: 12,
+                          padding: '11px 14px',
+                          borderTop: i === 0 ? '1px solid var(--border)' : '1px solid var(--border)',
+                          cursor: 'pointer', transition: 'background .12s',
+                          background: 'var(--surface)',
+                        }}
+                        onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface2)')}
+                        onMouseLeave={e => (e.currentTarget.style.background = 'var(--surface)')}
+                      >
+                        <Avatar card={card} />
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 14, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {card.name || '（名前なし）'}
+                          </div>
+                          <div style={{ fontSize: 12, color: 'var(--text2)', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {card.title || ''}
+                          </div>
+                        </div>
+                        <Stars n={card.importance || 3} />
+                      </div>
+                    ))}
                   </div>
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }} className="hidden sm:block">
-                  <div style={{ fontSize: 13, color: 'var(--text2)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{card.company}</div>
-                  <div style={{ fontSize: 12, color: 'var(--text3)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{card.title}</div>
-                </div>
+                )}
               </div>
-              <Stars n={card.importance || 3} />
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
     </div>
