@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ChevronLeft, Camera, Zap, Edit2, Trash2, Save, X } from 'lucide-react'
+import { ChevronLeft, Camera, Zap, Edit2, Trash2, Save, X, GalleryHorizontal } from 'lucide-react'
 import { supabase, STORAGE_BUCKET, EDGE_FUNCTION_URL } from '../lib/supabase'
 import type { Card } from '../types'
+import CameraModal from '../components/CameraModal'
 
 const IMP_LABELS = ['', '低', '低め', '普通', '高め', '高']
 
@@ -87,7 +88,7 @@ export default function CardPage({ mode }: { mode: 'new' | 'view' | 'edit' }) {
   const [backBlob, setBackBlob] = useState<Blob | null>(null)
 
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const cameraInputRef = useRef<HTMLInputElement>(null)
+  const [showCamera, setShowCamera] = useState(false)
   const isEditing = mode === 'new' || mode === 'edit'
 
   // Load existing card
@@ -317,7 +318,7 @@ export default function CardPage({ mode }: { mode: 'new' | 'view' | 'edit' }) {
             <>
               <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
                 <button
-                  onClick={() => cameraInputRef.current?.click()}
+                  onClick={() => setShowCamera(true)}
                   style={{
                     flex: 1, padding: 9, border: '1px solid var(--border)', borderRadius: 8,
                     background: 'var(--surface)', color: 'var(--text)', fontSize: 13, fontWeight: 600,
@@ -336,7 +337,7 @@ export default function CardPage({ mode }: { mode: 'new' | 'view' | 'edit' }) {
                     cursor: 'pointer', fontFamily: 'inherit',
                   }}
                 >
-                  <Camera size={14} />ライブラリ
+                  <GalleryHorizontal size={14} />ライブラリ
                 </button>
               </div>
               <button
@@ -434,7 +435,20 @@ export default function CardPage({ mode }: { mode: 'new' | 'view' | 'edit' }) {
       </div>
 
       <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleFileChange} />
-      <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" style={{ display: 'none' }} onChange={handleFileChange} />
+
+      {showCamera && (
+        <CameraModal
+          onCapture={async file => {
+            setShowCamera(false)
+            try {
+              const { dataUrl, blob } = await compress(file)
+              if (photoSide === 'front') { setFrontPreview(dataUrl); setFrontBlob(blob) }
+              else { setBackPreview(dataUrl); setBackBlob(blob) }
+            } catch { toast('画像の読み込みに失敗しました') }
+          }}
+          onClose={() => setShowCamera(false)}
+        />
+      )}
 
       {/* Toast */}
       <div className={`toast-base${show ? ' show' : ''}`}>{msg}</div>

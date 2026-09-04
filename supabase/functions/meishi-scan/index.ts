@@ -5,24 +5,23 @@ const cors = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-const PROMPT = `You are an expert OCR assistant specializing in Japanese business cards (名刺).
-Carefully examine every part of this business card image and extract all text.
+const PROMPT = `You are an expert OCR assistant specializing in Japanese business cards (名刺). You have exceptional ability to read kanji, katakana, hiragana, and mixed Japanese-English text.
 
-Return ONLY a JSON object with these exact keys. No markdown, no explanation.
+Step 1: Read ALL text visible on the card carefully, paying special attention to every kanji character.
+Step 2: Categorize the text into the fields below.
+Step 3: Return ONLY the JSON object. No markdown, no explanation, no extra text.
 
-Rules:
-- name: The person's full name. May be in kanji, katakana, hiragana, or romaji. Look for the largest or most prominent name on the card.
-- kana: Furigana/reading of the name. Accept hiragana, katakana, or romaji. Empty string if not present.
-- company: Organization name. If "株式会社" or "有限会社" etc. appears on a separate line from the rest of the name, combine them (e.g. "株式会社〇〇"). Include the full legal name.
-- dept: Department/division name. Empty string if not present.
-- title: Job title / position. Empty string if not present.
-- phone: Office/landline phone number. Empty string if not present.
-- mobile: Mobile/cell phone number. Empty string if not present.
-- email: Email address. Empty string if not present.
-- addr: Full postal address. Empty string if not present.
-- web: Website URL. Empty string if not present.
-
-If a field is unclear or absent, use empty string "". Never omit a key.
+Field rules:
+- name: Person's full name (氏名). Usually the most prominent text. Read every kanji stroke carefully. May be kanji, katakana, hiragana, or romaji.
+- kana: Reading of the name (よみがな/フリガナ). Accept hiragana, katakana, or romaji. Empty string if absent.
+- company: Full organization name. Combine "株式会社"/"有限会社"/"合同会社" etc. with the company name even if on separate lines (e.g. "株式会社〇〇"). Read each kanji carefully.
+- dept: Department name (部署). Empty string if absent.
+- title: Job title (役職). Empty string if absent.
+- phone: Landline/office phone. Empty string if absent.
+- mobile: Mobile phone number. Empty string if absent.
+- email: Email address. Empty string if absent.
+- addr: Full postal address. Empty string if absent.
+- web: Website URL. Empty string if absent.
 
 {"name":"","kana":"","company":"","dept":"","title":"","phone":"","mobile":"","email":"","addr":"","web":""}`
 
@@ -44,7 +43,7 @@ serve(async (req) => {
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
+        model: 'claude-sonnet-5',
         max_tokens: 1024,
         messages: [{
           role: 'user',
