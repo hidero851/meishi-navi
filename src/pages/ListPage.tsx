@@ -217,7 +217,7 @@ export default function ListPage() {
       </div>
 
       {/* Sort bar */}
-      <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
+      <div style={{ display: 'flex', gap: 8, marginBottom: 8, flexWrap: 'wrap' }}>
         <div style={{ fontSize: 12, color: 'var(--text3)', display: 'flex', alignItems: 'center', gap: 4, marginRight: 4 }}>
           <ArrowUpDown size={13} />並び順:
         </div>
@@ -237,6 +237,24 @@ export default function ListPage() {
           </button>
         ))}
       </div>
+
+      {/* Expand / Collapse all */}
+      {grouped.length > 0 && (
+        <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
+          <button
+            onClick={() => setExpanded(new Set(grouped.map(([k]) => k)))}
+            style={{ padding: '4px 12px', borderRadius: 20, fontSize: 12, fontWeight: 600, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text2)', cursor: 'pointer', fontFamily: 'inherit' }}
+          >
+            <ChevronDown size={11} style={{ marginRight: 3, verticalAlign: 'middle' }} />全て展開
+          </button>
+          <button
+            onClick={() => setExpanded(new Set())}
+            style={{ padding: '4px 12px', borderRadius: 20, fontSize: 12, fontWeight: 600, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text2)', cursor: 'pointer', fontFamily: 'inherit' }}
+          >
+            <ChevronUp size={11} style={{ marginRight: 3, verticalAlign: 'middle' }} />全て閉じる
+          </button>
+        </div>
+      )}
 
       {/* Card list */}
       {loading ? (
