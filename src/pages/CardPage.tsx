@@ -92,6 +92,14 @@ export default function CardPage({ mode }: { mode: 'new' | 'view' | 'edit' }) {
   const [lightbox, setLightbox] = useState<string | null>(null)
   const isEditing = mode === 'new' || mode === 'edit'
 
+  // Auto-fill registrant from logged-in user on new card
+  useEffect(() => {
+    if (mode !== 'new') return
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user?.email) setCard(prev => ({ ...prev, registrant: prev.registrant || user.email! }))
+    })
+  }, [mode])
+
   // Load existing card
   useEffect(() => {
     if (!id) return
@@ -123,9 +131,14 @@ export default function CardPage({ mode }: { mode: 'new' | 'view' | 'edit' }) {
     setScanning(true)
     try {
       const base64 = preview.split(',')[1]
+      const { data: { session } } = await supabase.auth.getSession()
       const res = await fetch(EDGE_FUNCTION_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', apikey: import.meta.env.VITE_SUPABASE_ANON_KEY },
+        headers: {
+          'Content-Type': 'application/json',
+          apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${session!.access_token}`,
+        },
         body: JSON.stringify({ image: base64, mimeType: 'image/jpeg' }),
       })
       if (!res.ok) { const e = await res.json(); throw new Error(e.error || `エラー ${res.status}`) }

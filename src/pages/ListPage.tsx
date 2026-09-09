@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Search, Plus, ChevronDown, ChevronUp, ArrowUpDown, Download } from 'lucide-react'
+import { Search, Plus, ChevronDown, ChevronUp, ArrowUpDown, Download, LogOut } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import type { Card } from '../types'
 
@@ -168,6 +168,20 @@ export default function ListPage() {
           <span style={{ fontSize: 18, fontWeight: 700, letterSpacing: '-.3px' }}>名刺ボックス</span>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
+          <button
+            onClick={() => supabase.auth.signOut()}
+            title="ログアウト"
+            style={{
+              width: 42, height: 42, borderRadius: '50%',
+              background: 'var(--surface)', color: 'var(--text2)',
+              border: '1px solid var(--border)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              cursor: 'pointer',
+            }}
+            aria-label="ログアウト"
+          >
+            <LogOut size={17} />
+          </button>
           <button
             onClick={() => exportCSV(cards)}
             disabled={cards.length === 0}
