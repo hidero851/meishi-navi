@@ -5,10 +5,11 @@ import { supabase } from '../lib/supabase'
 import type { Card } from '../types'
 
 function exportCSV(cards: Card[]) {
-  const headers = ['氏名', 'よみがな', '会社名', '部署', '役職', 'TEL', '携帯', 'メール', '住所', 'Web', 'メモ', '重要度', '登録日']
+  const headers = ['氏名', 'よみがな', '会社名', '部署', '役職', 'TEL', '携帯', 'メール', '住所', 'Web', '登録者', '出会った場所', 'メモ', '重要度', '登録日']
   const rows = cards.map(c => [
     c.name, c.kana, c.company, c.dept, c.title,
-    c.phone, c.mobile, c.email, c.addr, c.web, c.notes,
+    c.phone, c.mobile, c.email, c.addr, c.web,
+    c.registrant, c.met_place, c.notes,
     c.importance,
     c.created_at ? new Date(c.created_at).toLocaleDateString('ja-JP') : '',
   ].map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(','))

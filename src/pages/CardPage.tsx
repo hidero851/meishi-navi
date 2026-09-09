@@ -397,6 +397,19 @@ export default function CardPage({ mode }: { mode: 'new' | 'view' | 'edit' }) {
             ))}
           </div>
 
+          {/* Registration info */}
+          <div className="surface" style={{ padding: '16px 16px 8px', marginBottom: 12 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em', color: 'var(--text3)', marginBottom: 12 }}>登録情報</div>
+            <div className="field-row">
+              <span className="field-lbl">登録者</span>
+              <input className="field-inp" value={field('registrant')} readOnly={!isEditing} placeholder={isEditing ? '例: 山田 花子' : ''} onChange={e => setField('registrant', e.target.value)} />
+            </div>
+            <div className="field-row">
+              <span className="field-lbl">出会った場所</span>
+              <input className="field-inp" value={field('met_place')} readOnly={!isEditing} placeholder={isEditing ? '例: 東京ビジネスEXPO 2026' : ''} onChange={e => setField('met_place', e.target.value)} />
+            </div>
+          </div>
+
           {/* Notes */}
           <div className="surface" style={{ padding: '16px 16px 8px', marginBottom: 12 }}>
             <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em', color: 'var(--text3)', marginBottom: 12 }}>メモ</div>

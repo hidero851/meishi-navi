@@ -11,6 +11,8 @@ export interface Card {
   addr: string
   web: string
   notes: string
+  registrant: string
+  met_place: string
   importance: number
   front_photo_url: string | null
   back_photo_url: string | null
