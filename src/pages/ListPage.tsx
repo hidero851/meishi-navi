@@ -88,7 +88,7 @@ export default function ListPage() {
     if (!query.trim()) return cards
     const q = query.toLowerCase()
     return cards.filter(c =>
-      [c.name, c.kana, c.company, c.title, c.notes].some(f => (f || '').toLowerCase().includes(q))
+      [c.name, c.kana, c.company, c.title, c.notes, c.registrant].some(f => (f || '').toLowerCase().includes(q))
     )
   }, [cards, query])
 
@@ -219,7 +219,7 @@ export default function ListPage() {
         <Search size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text3)', pointerEvents: 'none' }} />
         <input
           type="search"
-          placeholder="名前・会社名・メモで検索"
+          placeholder="名前・会社名・登録者・メモで検索"
           value={query}
           onChange={e => setQuery(e.target.value)}
           style={{
