@@ -96,7 +96,8 @@ export default function CardPage({ mode }: { mode: 'new' | 'view' | 'edit' }) {
   useEffect(() => {
     if (mode !== 'new') return
     supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user?.email) setCard(prev => ({ ...prev, registrant: prev.registrant || user.email! }))
+      const name = user?.user_metadata?.display_name || user?.email || ''
+      if (name) setCard(prev => ({ ...prev, registrant: prev.registrant || name }))
     })
   }, [mode])
 
