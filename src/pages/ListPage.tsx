@@ -165,7 +165,7 @@ export default function ListPage() {
               <line x1="8" y1="6" x2="8" y2="18" />
             </svg>
           </div>
-          <span style={{ fontSize: 18, fontWeight: 700, letterSpacing: '-.3px' }}>名刺ボックス</span>
+          <span style={{ fontSize: 18, fontWeight: 700, letterSpacing: '-.3px' }}>名刺管理 - 株式会社Qibou</span>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           <button
