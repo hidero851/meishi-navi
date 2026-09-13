@@ -92,15 +92,6 @@ export default function CardPage({ mode }: { mode: 'new' | 'view' | 'edit' }) {
   const [lightbox, setLightbox] = useState<string | null>(null)
   const isEditing = mode === 'new' || mode === 'edit'
 
-  // Auto-fill registrant from logged-in user on new card
-  useEffect(() => {
-    if (mode !== 'new') return
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      const name = user?.user_metadata?.display_name || user?.email || ''
-      if (name) setCard(prev => ({ ...prev, registrant: prev.registrant || name }))
-    })
-  }, [mode])
-
   // Load existing card
   useEffect(() => {
     if (!id) return

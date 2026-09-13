@@ -5,8 +5,6 @@ import { supabase } from './lib/supabase'
 import ListPage from './pages/ListPage'
 import CardPage from './pages/CardPage'
 import LoginPage from './pages/LoginPage'
-import SetupNamePage from './pages/SetupNamePage'
-
 export default function App() {
   const [user, setUser] = useState<User | null | undefined>(undefined)
 
@@ -28,17 +26,14 @@ export default function App() {
     )
   }
 
-  const hasName = !!user?.user_metadata?.display_name
-
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={user ? <Navigate to="/" replace /> : <LoginPage />} />
-        <Route path="/setup-name" element={!user ? <Navigate to="/login" replace /> : hasName ? <Navigate to="/" replace /> : <SetupNamePage />} />
-        <Route path="/" element={!user ? <Navigate to="/login" replace /> : !hasName ? <Navigate to="/setup-name" replace /> : <ListPage />} />
-        <Route path="/card/new" element={!user ? <Navigate to="/login" replace /> : !hasName ? <Navigate to="/setup-name" replace /> : <CardPage mode="new" />} />
-        <Route path="/card/:id" element={!user ? <Navigate to="/login" replace /> : !hasName ? <Navigate to="/setup-name" replace /> : <CardPage mode="view" />} />
-        <Route path="/card/:id/edit" element={!user ? <Navigate to="/login" replace /> : !hasName ? <Navigate to="/setup-name" replace /> : <CardPage mode="edit" />} />
+        <Route path="/" element={user ? <ListPage /> : <Navigate to="/login" replace />} />
+        <Route path="/card/new" element={user ? <CardPage mode="new" /> : <Navigate to="/login" replace />} />
+        <Route path="/card/:id" element={user ? <CardPage mode="view" /> : <Navigate to="/login" replace />} />
+        <Route path="/card/:id/edit" element={user ? <CardPage mode="edit" /> : <Navigate to="/login" replace />} />
       </Routes>
     </BrowserRouter>
   )
