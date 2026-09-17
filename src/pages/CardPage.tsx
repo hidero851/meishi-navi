@@ -76,7 +76,9 @@ export default function CardPage({ mode }: { mode: 'new' | 'view' | 'edit' }) {
   const navigate = useNavigate()
   const { msg, show, toast } = useToast()
 
-  const [card, setCard] = useState<Partial<Card>>({ importance: 3 })
+  const [card, setCard] = useState<Partial<Card>>({ importance: 3, tags: [] })
+  const [tagInput, setTagInput] = useState('')
+  const [allTags, setAllTags] = useState<string[]>([])
   const [loading, setLoading] = useState(mode !== 'new')
   const [saving, setSaving] = useState(false)
   const [scanning, setScanning] = useState(false)
@@ -88,6 +90,7 @@ export default function CardPage({ mode }: { mode: 'new' | 'view' | 'edit' }) {
   const [backBlob, setBackBlob] = useState<Blob | null>(null)
 
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const tagInputRef = useRef<HTMLInputElement>(null)
   const [showCamera, setShowCamera] = useState(false)
   const [lightbox, setLightbox] = useState<string | null>(null)
   const isEditing = mode === 'new' || mode === 'edit'
@@ -103,6 +106,35 @@ export default function CardPage({ mode }: { mode: 'new' | 'view' | 'edit' }) {
       setLoading(false)
     })
   }, [id])
+
+  // Load all tags for autocomplete
+  useEffect(() => {
+    supabase.from('meishi_cards').select('tags').then(({ data }) => {
+      if (!data) return
+      const all = Array.from(new Set(data.flatMap((r: { tags: string[] }) => r.tags || []))).sort()
+      setAllTags(all as string[])
+    })
+  }, [])
+
+  const addTag = (tag: string) => {
+    const t = tag.trim()
+    if (!t) return
+    setCard(prev => {
+      const existing = prev.tags || []
+      if (existing.includes(t)) return prev
+      return { ...prev, tags: [...existing, t] }
+    })
+    setTagInput('')
+    tagInputRef.current?.focus()
+  }
+
+  const removeTag = (tag: string) => {
+    setCard(prev => ({ ...prev, tags: (prev.tags || []).filter(t => t !== tag) }))
+  }
+
+  const tagSuggestions = allTags.filter(t =>
+    tagInput.trim() && t.toLowerCase().includes(tagInput.toLowerCase()) && !(card.tags || []).includes(t)
+  )
 
   const currentPreview = photoSide === 'front' ? frontPreview : backPreview
 
@@ -413,6 +445,93 @@ export default function CardPage({ mode }: { mode: 'new' | 'view' | 'edit' }) {
               <span className="field-lbl">出会った場所</span>
               <input className="field-inp" value={field('met_place')} readOnly={!isEditing} placeholder={isEditing ? '例: 東京ビジネスEXPO 2026' : ''} onChange={e => setField('met_place', e.target.value)} />
             </div>
+          </div>
+
+          {/* Tags */}
+          <div className="surface" style={{ padding: '16px 16px 12px', marginBottom: 12 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em', color: 'var(--text3)', marginBottom: 12 }}>タグ</div>
+            {/* Chips */}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: (card.tags?.length || 0) > 0 ? 10 : 0 }}>
+              {(card.tags || []).map(tag => (
+                <span key={tag} style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 4,
+                  padding: '3px 10px 3px 10px',
+                  background: 'var(--accent-soft)', color: 'var(--accent)',
+                  borderRadius: 20, fontSize: 13, fontWeight: 600,
+                  border: '1px solid var(--accent)',
+                }}>
+                  {tag}
+                  {isEditing && (
+                    <button
+                      onClick={() => removeTag(tag)}
+                      style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: 'var(--accent)', lineHeight: 1, display: 'flex', alignItems: 'center' }}
+                      aria-label={`${tag}を削除`}
+                    >
+                      <X size={12} />
+                    </button>
+                  )}
+                </span>
+              ))}
+              {!isEditing && (card.tags?.length || 0) === 0 && (
+                <span style={{ fontSize: 13, color: 'var(--text3)' }}>タグなし</span>
+              )}
+            </div>
+            {/* Tag input (edit mode) */}
+            {isEditing && (
+              <div style={{ position: 'relative' }}>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  <input
+                    ref={tagInputRef}
+                    type="text"
+                    value={tagInput}
+                    onChange={e => setTagInput(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') { e.preventDefault(); addTag(tagInput) }
+                    }}
+                    placeholder="タグを追加 (Enterで確定)"
+                    style={{
+                      flex: 1, padding: '7px 10px',
+                      border: '1px solid var(--border)', borderRadius: 8,
+                      background: 'var(--surface)', color: 'var(--text)',
+                      fontSize: 14, outline: 'none', fontFamily: 'inherit',
+                    }}
+                  />
+                  <button
+                    onClick={() => addTag(tagInput)}
+                    style={{
+                      padding: '7px 14px', borderRadius: 8, fontSize: 13, fontWeight: 700,
+                      background: 'var(--accent)', color: '#fff', border: 'none',
+                      cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0,
+                    }}
+                  >追加</button>
+                </div>
+                {/* Suggestions */}
+                {tagSuggestions.length > 0 && (
+                  <div style={{
+                    position: 'absolute', top: '100%', left: 0, right: 52,
+                    background: 'var(--surface)', border: '1px solid var(--border)',
+                    borderRadius: 8, marginTop: 4, overflow: 'hidden',
+                    boxShadow: 'var(--sh2)', zIndex: 50,
+                  }}>
+                    {tagSuggestions.slice(0, 6).map(s => (
+                      <button
+                        key={s}
+                        onMouseDown={e => { e.preventDefault(); addTag(s) }}
+                        style={{
+                          display: 'block', width: '100%', textAlign: 'left',
+                          padding: '8px 12px', background: 'none', border: 'none',
+                          fontSize: 13, color: 'var(--text)', cursor: 'pointer', fontFamily: 'inherit',
+                        }}
+                        onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface2)')}
+                        onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+                      >
+                        {s}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Notes */}

@@ -13,6 +13,7 @@ export interface Card {
   notes: string
   registrant: string
   met_place: string
+  tags: string[]
   importance: number
   front_photo_url: string | null
   back_photo_url: string | null

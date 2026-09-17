@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Search, Plus, ChevronDown, ChevronUp, ArrowUpDown, Download, LogOut } from 'lucide-react'
+import { Search, Plus, ChevronDown, ChevronUp, ArrowUpDown, Download, LogOut, Tag } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import type { Card } from '../types'
 
@@ -63,6 +63,7 @@ export default function ListPage() {
   const [cards, setCards] = useState<Card[]>([])
   const [loading, setLoading] = useState(true)
   const [query, setQuery] = useState('')
+  const [tagFilter, setTagFilter] = useState('')
   const [sortKey, setSortKey] = useState<SortKey>('company')
   const [sortDir, setSortDir] = useState<SortDir>('asc')
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
@@ -84,13 +85,19 @@ export default function ListPage() {
 
   useEffect(() => { fetchCards() }, [fetchCards])
 
+  const allTags = useMemo(() =>
+    Array.from(new Set(cards.flatMap(c => c.tags || []))).sort()
+  , [cards])
+
   const filtered = useMemo(() => {
-    if (!query.trim()) return cards
+    let result = cards
+    if (tagFilter) result = result.filter(c => (c.tags || []).includes(tagFilter))
+    if (!query.trim()) return result
     const q = query.toLowerCase()
-    return cards.filter(c =>
+    return result.filter(c =>
       [c.name, c.kana, c.company, c.title, c.notes, c.registrant].some(f => (f || '').toLowerCase().includes(q))
     )
-  }, [cards, query])
+  }, [cards, query, tagFilter])
 
   const grouped = useMemo(() => {
     const map = new Map<string, Card[]>()
@@ -215,7 +222,7 @@ export default function ListPage() {
       </header>
 
       {/* Search */}
-      <div style={{ position: 'relative', marginBottom: 10 }}>
+      <div style={{ position: 'relative', marginBottom: 8 }}>
         <Search size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text3)', pointerEvents: 'none' }} />
         <input
           type="search"
@@ -229,6 +236,40 @@ export default function ListPage() {
             fontSize: 14, outline: 'none', fontFamily: 'inherit',
           }}
         />
+      </div>
+
+      {/* Tag filter */}
+      <div style={{ position: 'relative', marginBottom: 10 }}>
+        <Tag size={15} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: tagFilter ? 'var(--accent)' : 'var(--text3)', pointerEvents: 'none' }} />
+        <select
+          value={tagFilter}
+          onChange={e => setTagFilter(e.target.value)}
+          style={{
+            width: '100%', padding: '9px 12px 9px 36px',
+            border: `1px solid ${tagFilter ? 'var(--accent)' : 'var(--border)'}`,
+            borderRadius: 12, background: 'var(--surface)', color: tagFilter ? 'var(--accent)' : 'var(--text)',
+            fontSize: 14, outline: 'none', fontFamily: 'inherit',
+            appearance: 'none', cursor: 'pointer',
+            fontWeight: tagFilter ? 600 : 400,
+          }}
+        >
+          <option value="">タグで絞り込む</option>
+          {allTags.map(tag => (
+            <option key={tag} value={tag}>{tag}</option>
+          ))}
+        </select>
+        {tagFilter && (
+          <button
+            onClick={() => setTagFilter('')}
+            style={{
+              position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)',
+              background: 'none', border: 'none', cursor: 'pointer', color: 'var(--accent)',
+              display: 'flex', alignItems: 'center', padding: 2,
+            }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        )}
       </div>
 
       {/* Sort bar */}
@@ -346,6 +387,18 @@ export default function ListPage() {
                           <div style={{ fontSize: 12, color: 'var(--text2)', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                             {card.title || ''}
                           </div>
+                          {(card.tags || []).length > 0 && (
+                            <div style={{ display: 'flex', gap: 4, marginTop: 4, flexWrap: 'wrap' }}>
+                              {(card.tags || []).map(tag => (
+                                <span key={tag} style={{
+                                  fontSize: 11, fontWeight: 600, padding: '1px 7px',
+                                  background: 'var(--accent-soft)', color: 'var(--accent)',
+                                  borderRadius: 10, border: '1px solid var(--accent)',
+                                  whiteSpace: 'nowrap',
+                                }}>{tag}</span>
+                              ))}
+                            </div>
+                          )}
                         </div>
                         <Stars n={card.importance || 3} />
                       </div>
